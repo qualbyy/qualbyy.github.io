@@ -319,6 +319,18 @@
       color: var(--sand-dark);
     }
 
+    .nav-btn.nav-btn-highlight {
+      background: #f7e6e5;
+      border-color: #e5b8b5;
+      color: #9c433d;
+    }
+
+    .nav-btn.nav-btn-highlight:hover {
+      background: #f0d5d4;
+      border-color: #d69894;
+      color: #7d2e29;
+    }
+
     /* Таблицы */
     .table-view {
       display: flex;
@@ -777,6 +789,7 @@
         <div class="dim">быстрые команды:</div>
         <div class="quick-nav">
           <button class="nav-btn" onclick="runCmd('all')">all</button>
+          <button class="nav-btn nav-btn-highlight" onclick="runCmd('mskmeetsgmd')">mskmeetsgmd</button>
           <button class="nav-btn" onclick="toggleWindow('blog', true)">blog app &rarr;</button>
           <button class="nav-btn" onclick="runCmd('about')">about</button>
           <button class="nav-btn" onclick="runCmd('stack')">stack</button>
@@ -1103,6 +1116,18 @@
     // HTML секций
     function getSectionHtml(cmd) {
       switch(cmd) {
+        case 'project':
+        case 'mskmeetsgmd':
+          return `
+            <div class="prompt-row">
+              <span class="prompt"><span class="p-user">qualbyy</span><span class="p-sym">:</span><span class="p-path">~</span><span class="p-sym">$</span></span>
+              <span class="command">cat ./mskmeetsgmd.txt</span>
+            </div>
+            <div class="output">
+              <div style="margin-bottom: 6px;">мой сайт для удобного просмотра информации по сходкам ГДшеров из Москвы</div>
+              <div><a class="term-link" href="https://qualbyy.github.io/mskmeetsgmd/" target="_blank">https://qualbyy.github.io/mskmeetsgmd/ &nearr;</a></div>
+            </div>
+          `;
         case 'about':
           return `
             <div class="prompt-row">
@@ -1259,6 +1284,7 @@
       if (clean === 'help') {
         appendOutput('help', `доступные команды:
   - all         : раскрыть всё био целиком
+  - project     : подпроект mskmeetsgmd
   - about       : обо мне
   - stack       : стек и кодинг
   - telegram    : каналы и проекты
