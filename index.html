@@ -1,0 +1,1359 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>qualbyy@shell: ~</title>
+  <style>
+    :root {
+      --bg: #f5f2eb;
+      --term-bg: #fcfbf9;
+      --header-bg: #ece6da;
+      --border: #dfd7c8;
+      --border-dark: #cec2ae;
+      --text: #2f2a24;
+      --text-dim: #7a7164;
+      
+      --sand-accent: #a07844;
+      --sand-dark: #825e2e;
+      --sand-badge: #eee7db;
+      --prompt-user: #8c6838;
+      --prompt-path: #6b6357;
+      
+      --font-mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: var(--font-mono);
+      font-size: 13.5px;
+      line-height: 1.55;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden; /* Окна внутри рабочего стола */
+      text-transform: lowercase;
+      position: relative;
+    }
+
+    /* Окна ОС (абсолютное позиционирование с возможностью перетаскивания) */
+    .window {
+      position: absolute;
+      background: var(--term-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      box-shadow: 0 12px 36px rgba(130, 94, 46, 0.12), 0 3px 8px rgba(0, 0, 0, 0.04);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transform-origin: 100% 50%;
+      transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.3s ease, filter 0.3s ease;
+      will-change: transform, opacity, left, top;
+      max-height: 88vh;
+    }
+
+    .window.active-focus {
+      z-index: 100 !important;
+      box-shadow: 0 18px 48px rgba(130, 94, 46, 0.18), 0 4px 12px rgba(0, 0, 0, 0.06);
+      border-color: var(--border-dark);
+    }
+
+    /* Genie Effect сворачивания к правому доку */
+    .window.minimized {
+      transform: translate3d(320px, 0, -200px) scale(0.04, 0.2) skewY(6deg);
+      opacity: 0;
+      pointer-events: none;
+      filter: blur(4px);
+    }
+
+    /* Эффект выключения старого ТВ при закрытии (CRT TV off) */
+    .window.tv-closing {
+      animation: crtTvOff 0.38s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+      pointer-events: none;
+    }
+
+    @keyframes crtTvOff {
+      0% {
+        transform: scale(1, 1);
+        filter: brightness(1);
+        opacity: 1;
+      }
+      40% {
+        transform: scale(1.04, 0.008);
+        filter: brightness(1.8) contrast(1.5);
+        opacity: 0.95;
+      }
+      75% {
+        transform: scale(0.15, 0.008);
+        filter: brightness(2.5);
+        opacity: 0.8;
+      }
+      100% {
+        transform: scale(0, 0);
+        filter: brightness(3);
+        opacity: 0;
+      }
+    }
+
+    .window-main {
+      width: 700px;
+      max-width: 92vw;
+    }
+
+    .window-blog {
+      width: 520px;
+      max-width: 90vw;
+    }
+
+    .window-modal {
+      width: 480px;
+      max-width: 90vw;
+      background: var(--term-bg);
+      border: 1px solid var(--border-dark);
+      z-index: 150 !important;
+    }
+
+    .modal-game-content {
+      padding: 18px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      color: var(--text);
+    }
+
+    /* Шапка окна (draggable хэндл) */
+    .window-header {
+      background: var(--header-bg);
+      border-bottom: 1px solid var(--border);
+      padding: 6px 14px 6px 6px; /* смещаем область кнопок левее */
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+      cursor: grab;
+      min-height: 38px;
+    }
+
+    .window-header:active {
+      cursor: grabbing;
+    }
+
+    .header-buttons {
+      display: flex;
+      gap: 0px;
+      align-items: center;
+      margin-left: 2px;
+    }
+
+    /* Увеличенный хитбокс вокруг каждой кнопки с компактным расстоянием */
+    .btn-hitbox {
+      width: 19px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .btn-hitbox:hover .btn {
+      transform: scale(1.15);
+      filter: brightness(0.95);
+    }
+
+    .btn {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      display: inline-block;
+      pointer-events: none;
+      transition: transform 0.1s ease;
+    }
+
+    .btn-close { background: #dca394; }
+    .btn-min { background: #e0cb8f; }
+    .btn-max { background: #abc699; }
+
+    .header-title {
+      font-size: 12px;
+      color: var(--text-dim);
+      letter-spacing: 0.04em;
+      pointer-events: none;
+    }
+
+    .header-title span.full-title {
+      display: inline;
+    }
+
+    .terminal-content {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      overflow-y: auto;
+      max-height: calc(88vh - 42px);
+    }
+
+    .line {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .prompt-row {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .prompt {
+      display: inline-flex;
+      gap: 4px;
+      font-weight: 600;
+      user-select: none;
+    }
+
+    .p-user { color: var(--prompt-user); }
+    .p-path { color: var(--prompt-path); }
+    .p-sym { color: var(--text-dim); }
+
+    .command {
+      color: var(--sand-dark);
+      font-weight: 600;
+    }
+
+    .dim { color: var(--text-dim); }
+
+    /* Fastfetch */
+    .fetch-container {
+      display: flex;
+      gap: 18px;
+      align-items: flex-start;
+      margin-top: 4px;
+    }
+
+    @media (max-width: 580px) {
+      .fetch-container {
+        flex-direction: column;
+        gap: 12px;
+      }
+    }
+
+    .fetch-ascii {
+      color: var(--sand-dark);
+      font-size: 11.5px;
+      line-height: 1.25;
+      white-space: pre;
+      user-select: none;
+      flex-shrink: 0;
+      font-weight: 500;
+      opacity: 0.95;
+    }
+
+    .fetch-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      width: 100%;
+    }
+
+    .fetch-title {
+      font-weight: 700;
+      color: var(--sand-dark);
+      margin-bottom: 2px;
+    }
+
+    .fetch-sep {
+      color: var(--border-dark);
+      font-size: 12px;
+      margin-bottom: 4px;
+      user-select: none;
+    }
+
+    .fetch-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .f-key {
+      color: var(--sand-accent);
+      font-weight: 600;
+      min-width: 75px;
+      flex-shrink: 0;
+    }
+
+    .f-val {
+      color: var(--text);
+    }
+
+    /* Кнопки */
+    .quick-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 2px;
+    }
+
+    .nav-btn {
+      background: var(--sand-badge);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.15s ease;
+    }
+
+    .nav-btn:hover {
+      background: #e4dcce;
+      border-color: var(--border-dark);
+      color: var(--sand-dark);
+    }
+
+    /* Таблицы */
+    .table-view {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .table-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      border-bottom: 1px dashed var(--border);
+      padding-bottom: 4px;
+    }
+
+    .table-key {
+      color: var(--text-dim);
+      flex-shrink: 0;
+    }
+
+    .table-val {
+      text-align: right;
+      color: var(--text);
+    }
+
+    a.term-link {
+      color: var(--sand-dark);
+      text-decoration: none;
+      border-bottom: 1px dotted var(--sand-accent);
+      font-weight: 500;
+    }
+
+    a.term-link:hover {
+      border-bottom-style: solid;
+      color: #5c3f19;
+    }
+
+    .copyable {
+      cursor: pointer;
+    }
+
+    .copyable:hover .table-key {
+      color: var(--sand-dark);
+    }
+
+    .copy-hint {
+      font-size: 11px;
+      color: var(--sand-accent);
+      margin-left: 6px;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+
+    .copyable:hover .copy-hint {
+      opacity: 0.7;
+    }
+
+    .copied-toast {
+      color: #6a8c4f !important;
+      opacity: 1 !important;
+      font-weight: 600;
+    }
+
+    .tag-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .term-tag {
+      background: var(--sand-badge);
+      border: 1px solid var(--border);
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      color: var(--text);
+    }
+
+    .term-tag.interactive-tag {
+      cursor: pointer;
+      border-color: var(--border-dark);
+      background: #f1ebdE;
+      color: var(--sand-dark);
+      font-weight: 500;
+      transition: all 0.15s ease;
+    }
+
+    .term-tag.interactive-tag:hover {
+      background: #e6ddcc;
+      border-color: var(--sand-accent);
+      transform: translateY(-1px);
+    }
+
+    .dni-tag {
+      color: var(--text-dim);
+      border-color: #e5ded3;
+      background: #f4eee3;
+    }
+
+    /* Строка ввода */
+    .interactive-line {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+      background: #f5f0e6;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 6px 10px;
+    }
+
+    .cmd-input {
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--sand-dark);
+      font-family: var(--font-mono);
+      font-size: 13.5px;
+      width: 100%;
+      text-transform: lowercase;
+    }
+
+    .cursor {
+      display: inline-block;
+      width: 7px;
+      height: 14px;
+      background: var(--sand-dark);
+      vertical-align: middle;
+      animation: blink 1s step-end infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    /* Блог-карточки */
+    .blog-post-card {
+      background: #f8f6f0;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .blog-post-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-size: 11.5px;
+      color: var(--text-dim);
+      border-bottom: 1px dashed var(--border);
+      padding-bottom: 4px;
+    }
+
+    .blog-post-title {
+      font-weight: 700;
+      color: var(--sand-dark);
+      font-size: 13px;
+    }
+
+    .blog-post-text {
+      color: var(--text);
+      white-space: pre-wrap;
+      line-height: 1.5;
+    }
+
+    /* БОКОВОЙ ДОК СПРАВА (Desktop) */
+    .side-dock {
+      position: fixed;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(236, 230, 218, 0.88);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid var(--border-dark);
+      border-radius: 28px;
+      padding: 10px 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: 0 8px 24px rgba(130, 94, 46, 0.12);
+      z-index: 999;
+    }
+
+    /* МОБИЛЬНАЯ АДАПТАЦИЯ (под точный масштаб экрана мобильных) */
+    @media (max-width: 768px) {
+      body {
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100vw !important;
+        height: 100dvh !important;
+        height: 100vh;
+        overflow: hidden !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+      }
+
+      .window-main, .window-blog {
+        position: absolute !important;
+        width: calc(100vw - 16px) !important;
+        max-width: calc(100vw - 16px) !important;
+        left: 8px !important;
+        top: 8px !important;
+        height: calc(100dvh - 78px) !important;
+        height: calc(100vh - 78px) !important;
+        max-height: calc(100dvh - 78px) !important;
+        transform-origin: 50% 100%;
+        margin: 0 !important;
+        transition: transform 0.35s cubic-bezier(0.2, 0.9, 0.3, 1), opacity 0.28s ease !important;
+      }
+
+      .window-main.minimized, .window-blog.minimized {
+        transform: translate3d(0, 120px, 0) scale(0.65) !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        filter: blur(3px) !important;
+        display: flex !important;
+      }
+
+      /* Окно с информацией об игре: плавная модальная анимация появления из центра */
+      .window-modal {
+        position: fixed !important;
+        width: calc(100vw - 28px) !important;
+        max-width: 440px !important;
+        left: 50% !important;
+        top: 50% !important;
+        transform: translate(-50%, -50%) scale(1) !important;
+        height: auto !important;
+        max-height: 80vh !important;
+        z-index: 10000 !important;
+        box-shadow: 0 16px 48px rgba(0, 0, 0, 0.35) !important;
+        transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.25s ease !important;
+      }
+
+      .window-modal.minimized {
+        transform: translate(-50%, -40%) scale(0.85) !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        display: flex !important;
+      }
+
+      .window-header {
+        cursor: default;
+        min-height: 34px;
+        padding: 4px 10px;
+        flex-shrink: 0;
+      }
+
+      .window.minimized {
+        transform: translate3d(0, 150px, -80px) scale(0.2, 0.04);
+        opacity: 0;
+        filter: blur(4px);
+        pointer-events: none;
+        display: none !important; /* На мобилке скрываем полностью чтобы не мешало */
+      }
+
+      .side-dock {
+        position: fixed !important;
+        left: 50% !important;
+        right: auto !important;
+        top: auto !important;
+        bottom: 10px !important;
+        transform: translateX(-50%) !important;
+        flex-direction: row;
+        padding: 4px 14px;
+        border-radius: 28px;
+        gap: 14px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.16);
+        z-index: 9999;
+      }
+
+      .dock-app {
+        width: 42px;
+        height: 42px;
+      }
+
+      .dock-app:hover, .dock-app:active {
+        transform: none !important;
+        box-shadow: none !important;
+        background: var(--term-bg) !important;
+      }
+
+      .dock-tooltip {
+        display: none;
+      }
+
+      /* Центрирование и укорачивание заголовка окна блога на мобилке */
+      #win-blog .window-header {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      #win-blog .header-title::after {
+        content: "microblog";
+      }
+
+      #win-blog .header-title span.full-title {
+        display: none;
+      }
+
+      #win-blog .header-title {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        text-align: center;
+        width: auto;
+      }
+
+      .nav-btn {
+        padding: 4px 8px;
+        font-size: 11.5px;
+      }
+
+      .terminal-content {
+        padding: 12px 10px;
+        flex: 1 1 auto;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .fetch-ascii {
+        font-size: 9.5px;
+        line-height: 1.15;
+      }
+
+      .fetch-container {
+        gap: 8px;
+      }
+
+      .interactive-line {
+        padding: 6px 8px;
+        margin-top: 6px;
+      }
+
+      .cmd-input {
+        font-size: 13px;
+      }
+    }
+
+    .dock-app {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: var(--term-bg);
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.2s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+      user-select: none;
+    }
+
+    .dock-app:hover {
+      transform: scale(1.15) translateX(-4px);
+      background: #fff;
+      box-shadow: 0 4px 12px rgba(130, 94, 46, 0.18);
+    }
+
+    .dock-app-icon {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--sand-dark);
+      font-family: var(--font-mono);
+    }
+
+    .dock-app-dot {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: var(--sand-accent);
+      position: absolute;
+      bottom: 4px;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .dock-app.open .dock-app-dot {
+      opacity: 1;
+    }
+
+    .dock-tooltip {
+      position: absolute;
+      right: 56px;
+      background: var(--sand-dark);
+      color: #fff;
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      transform: translateX(6px);
+      transition: all 0.15s ease;
+      font-family: var(--font-mono);
+    }
+
+    .dock-app:hover .dock-tooltip {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ОКНО 1: ТЕРМИНАЛ БИО (по центру по умолчанию) -->
+  <div class="window window-main active-focus" id="win-term" onmousedown="bringToFront('term')">
+    <div class="window-header" onmousedown="startDrag(event, 'win-term')">
+      <div class="header-buttons">
+        <div class="btn-hitbox" onclick="event.stopPropagation(); closeWindowWithTvEffect('term')" title="закрыть (тв эффект)">
+          <span class="btn btn-close"></span>
+        </div>
+        <div class="btn-hitbox" onclick="event.stopPropagation(); toggleWindow('term')" title="свернуть (genie)">
+          <span class="btn btn-min"></span>
+        </div>
+        <div class="btn-hitbox" onclick="event.stopPropagation(); centerWindow('term')" title="центрировать">
+          <span class="btn btn-max"></span>
+        </div>
+      </div>
+      <div class="header-title">qualbyy@shell: ~/bio</div>
+      <div style="width: 58px;"></div>
+    </div>
+
+    <div class="terminal-content">
+      <!-- fastfetch / Sleeping Cat -->
+      <div class="line">
+        <div class="prompt-row">
+          <span class="prompt"><span class="p-user">qualbyy</span><span class="p-sym">:</span><span class="p-path">~</span><span class="p-sym">$</span></span>
+          <span class="command">fastfetch</span>
+        </div>
+        
+        <div class="fetch-container">
+          <pre class="fetch-ascii">
+    |\__/,|   (`\
+  _.|o o  |_   ) )
+-(((---(((--------
+   z z Z Z . . .
+          </pre>
+
+          <div class="fetch-info" id="fetch-info-block"></div>
+        </div>
+      </div>
+
+      <!-- Быстрые кнопки -->
+      <div class="line">
+        <div class="dim">быстрые команды:</div>
+        <div class="quick-nav">
+          <button class="nav-btn" onclick="runCmd('all')">all</button>
+          <button class="nav-btn" onclick="toggleWindow('blog', true)">blog app &rarr;</button>
+          <button class="nav-btn" onclick="runCmd('about')">about</button>
+          <button class="nav-btn" onclick="runCmd('stack')">stack</button>
+          <button class="nav-btn" onclick="runCmd('telegram')">telegram</button>
+          <button class="nav-btn" onclick="runCmd('accounts')">accounts</button>
+          <button class="nav-btn" onclick="runCmd('setup')">setup</button>
+          <button class="nav-btn" onclick="runCmd('games')">games</button>
+          <button class="nav-btn" onclick="runCmd('traits')">traits</button>
+          <button class="nav-btn" onclick="runCmd('dni')">dni</button>
+          <button class="nav-btn" onclick="runCmd('help')">help</button>
+          <button class="nav-btn" onclick="runCmd('clear')">clear</button>
+        </div>
+      </div>
+
+      <!-- Динамический вывод команд -->
+      <div id="dynamic-output" style="display: flex; flex-direction: column; gap: 16px;"></div>
+
+      <!-- Строка ввода -->
+      <div class="interactive-line">
+        <span class="prompt"><span class="p-user">qualbyy</span><span class="p-sym">:</span><span class="p-path">~</span><span class="p-sym">$</span></span>
+        <input type="text" id="cli" class="cmd-input" placeholder="введи команду" autocomplete="off">
+      </div>
+    </div>
+  </div>
+
+  <!-- ОКНО 2: БЛОГ (по умолчанию свернуто) -->
+  <div class="window window-blog minimized" id="win-blog" onmousedown="bringToFront('blog')">
+    <div class="window-header" onmousedown="startDrag(event, 'win-blog')">
+      <div class="header-buttons">
+        <div class="btn-hitbox" onclick="event.stopPropagation(); closeWindowWithTvEffect('blog')" title="закрыть (тв эффект)">
+          <span class="btn btn-close"></span>
+        </div>
+        <div class="btn-hitbox" onclick="event.stopPropagation(); toggleWindow('blog')" title="свернуть (genie)">
+          <span class="btn btn-min"></span>
+        </div>
+        <div class="btn-hitbox" onclick="event.stopPropagation(); centerWindow('blog')" title="центрировать">
+          <span class="btn btn-max"></span>
+        </div>
+      </div>
+      <div class="header-title"><span class="full-title">qualbyy@shell: ~/blog/posts.log</span></div>
+      <div style="width: 58px;"></div>
+    </div>
+
+    <div class="terminal-content">
+      <div class="line">
+        <div class="prompt-row">
+          <span class="prompt"><span class="p-user">qualbyy</span><span class="p-sym">:</span><span class="p-path">~/blog</span><span class="p-sym">$</span></span>
+          <span class="command">tail -f ./posts.log</span>
+        </div>
+        <div class="dim">личный микролог и заметки:</div>
+      </div>
+
+      <div id="blog-posts-view" style="display: flex; flex-direction: column; gap: 12px;"></div>
+    </div>
+  </div>
+
+    <!-- ОКНО 3: ДОСТИЖЕНИЯ ИГРЫ (в стиле терминала/песочной темы) -->
+    <div class="window window-modal minimized" id="win-game-modal" onmousedown="bringToFront('game-modal')">
+      <div class="window-header" onmousedown="startDrag(event, 'win-game-modal')">
+        <div class="header-buttons">
+          <div class="btn-hitbox" onclick="event.stopPropagation(); closeWindowWithTvEffect('game-modal')" title="закрыть (тв эффект)">
+            <span class="btn btn-close"></span>
+          </div>
+          <div class="btn-hitbox" onclick="event.stopPropagation(); toggleWindow('game-modal')" title="свернуть">
+            <span class="btn btn-min"></span>
+          </div>
+          <div class="btn-hitbox" onclick="event.stopPropagation(); centerWindow('game-modal')" title="центрировать">
+            <span class="btn btn-max"></span>
+          </div>
+        </div>
+        <div class="header-title" id="game-modal-title">gaming.stats</div>
+        <div style="width: 58px;"></div>
+      </div>
+      
+      <div class="modal-game-content" id="game-modal-body"></div>
+    </div>
+
+  <!-- БОКОВОЙ ДОК СПРАВА -->
+  <div class="side-dock">
+    <div class="dock-app open" id="dock-term" onclick="toggleWindow('term')">
+      <span class="dock-app-icon">bio</span>
+      <span class="dock-app-dot"></span>
+      <span class="dock-tooltip">terminal bio</span>
+    </div>
+    
+    <div class="dock-app" id="dock-blog" onclick="toggleWindow('blog')">
+      <span class="dock-app-icon">log</span>
+      <span class="dock-app-dot"></span>
+      <span class="dock-tooltip">microblog</span>
+    </div>
+  </div>
+
+  <script src="data.js"></script>
+
+  <script>
+    // Z-index счетчик для активного окна
+    let highestZ = 10;
+    function bringToFront(winId) {
+      highestZ += 2;
+      const el = document.getElementById('win-' + winId);
+      el.style.zIndex = highestZ;
+      document.querySelectorAll('.window').forEach(w => w.classList.remove('active-focus'));
+      el.classList.add('active-focus');
+    }
+
+    // Открытие окна достижений игры (нативный стиль био)
+    function openGameModal(key) {
+      const modal = document.getElementById('win-game-modal');
+      const titleEl = document.getElementById('game-modal-title');
+      const bodyEl = document.getElementById('game-modal-body');
+
+      const game = BIO_DATA.games.find(g => typeof g === 'object' && g.key === key);
+      if (!game) return;
+
+      titleEl.innerText = `${game.title} — stats`;
+      bodyEl.innerHTML = `
+        <div class="line">
+          <div class="prompt-row">
+            <span class="prompt"><span class="p-user">qualbyy</span><span class="p-sym">:</span><span class="p-path">~/games</span><span class="p-sym">$</span></span>
+            <span class="command">stat ./${game.key}.conf</span>
+          </div>
+          <div class="table-view" style="margin-top: 6px;">
+            <div class="table-row">
+              <span class="table-key">никнейм</span>
+              <span class="table-val" style="font-weight: 600; color: var(--sand-dark);">${game.ign}</span>
+            </div>
+            ${game.details.map(d => `
+              <div class="table-row">
+                <span class="table-key">${d.label}</span>
+                <span class="table-val">${d.val}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+        <div class="dim" style="font-size: 11px; margin-top: 4px; border-top: 1px dashed var(--border); padding-top: 8px;">
+          status: sync completed &bull; verified profile
+        </div>
+      `;
+
+      windowState['game-modal'] = true;
+      modal.classList.remove('minimized');
+      modal.classList.remove('tv-closing');
+      if (!isMobile()) {
+        centerWindow('game-modal');
+      }
+      bringToFront('game-modal');
+    }
+
+    // Состояния окон
+    const windowState = {
+      term: true,
+      blog: false
+    };
+
+    // Центрирование окон по умолчанию
+    function centerWindow(winId) {
+      const el = document.getElementById('win-' + winId);
+      // Учитываем реальный bounding rect окна
+      const rect = el.getBoundingClientRect();
+      const w = rect.width || (winId === 'term' ? 700 : 520);
+      const h = rect.height || el.offsetHeight || 520;
+      
+      const left = Math.max(10, Math.round((window.innerWidth - w) / 2));
+      const top = Math.max(10, Math.round((window.innerHeight - h) / 2));
+
+      el.style.left = left + 'px';
+      el.style.top = top + 'px';
+    }
+
+    function closeWindowWithTvEffect(winId) {
+      const winEl = document.getElementById('win-' + winId);
+      const dockEl = document.getElementById('dock-' + winId);
+      
+      winEl.classList.remove('minimized');
+      winEl.classList.add('tv-closing');
+      windowState[winId] = false;
+      dockEl.classList.remove('open');
+
+      setTimeout(() => {
+        winEl.classList.remove('tv-closing');
+        winEl.classList.add('minimized');
+      }, 380);
+    }
+
+    function isMobile() {
+      return window.innerWidth <= 768;
+    }
+
+    function toggleWindow(winId, forceState) {
+      if (typeof forceState === 'boolean') {
+        windowState[winId] = forceState;
+      } else {
+        windowState[winId] = !windowState[winId];
+      }
+
+      // Взаимоисключение на мобилке для term и blog (окна игр не затрагиваются)
+      if (isMobile() && windowState[winId]) {
+        if (winId === 'term' && windowState.blog) {
+          toggleWindow('blog', false);
+        } else if (winId === 'blog' && windowState.term) {
+          toggleWindow('term', false);
+        }
+      }
+
+      const winEl = document.getElementById('win-' + winId);
+      const dockEl = document.getElementById('dock-' + winId);
+
+      if (windowState[winId]) {
+        winEl.classList.remove('tv-closing');
+        winEl.classList.remove('minimized');
+        dockEl.classList.add('open');
+        bringToFront(winId);
+
+        // Если не мобилка и позиция еще не выставлена, центрируем
+        if (!isMobile() && !winEl.style.left) {
+          centerWindow(winId);
+        }
+
+        if (winId === 'blog') renderBlogPosts();
+        if (winId === 'term' && !isMobile()) document.getElementById('cli').focus();
+      } else {
+        winEl.classList.add('minimized');
+        dockEl.classList.remove('open');
+      }
+    }
+
+    // ЛОГИКА DRAGGABLE ПЕРЕТАСКИВАНИЯ ОКОН
+    let activeDragWin = null;
+    let dragStartX = 0, dragStartY = 0;
+    let initialWinX = 0, initialWinY = 0;
+
+    function startDrag(e, elementId) {
+      if (isMobile()) return; // на смартфонах окна зафиксированы, без перетаскивания
+      if (e.target.classList.contains('btn')) return;
+      activeDragWin = document.getElementById(elementId);
+      bringToFront(elementId.replace('win-', ''));
+
+      dragStartX = e.clientX;
+      dragStartY = e.clientY;
+
+      initialWinX = activeDragWin.offsetLeft;
+      initialWinY = activeDragWin.offsetTop;
+
+      document.addEventListener('mousemove', onDragMove);
+      document.addEventListener('mouseup', endDrag);
+      e.preventDefault();
+    }
+
+    function onDragMove(e) {
+      if (!activeDragWin) return;
+      const deltaX = e.clientX - dragStartX;
+      const deltaY = e.clientY - dragStartY;
+
+      let newX = initialWinX + deltaX;
+      let newY = initialWinY + deltaY;
+
+      // Ограничения краев экрана
+      newX = Math.max(10, Math.min(window.innerWidth - activeDragWin.offsetWidth - 60, newX));
+      newY = Math.max(10, Math.min(window.innerHeight - 80, newY));
+
+      activeDragWin.style.left = newX + 'px';
+      activeDragWin.style.top = newY + 'px';
+    }
+
+    function endDrag() {
+      activeDragWin = null;
+      document.removeEventListener('mousemove', onDragMove);
+      document.removeEventListener('mouseup', endDrag);
+    }
+
+    // Рендер постов блога
+    function renderBlogPosts() {
+      const container = document.getElementById('blog-posts-view');
+      const posts = (typeof BIO_DATA.posts !== 'undefined' && BIO_DATA.posts.length > 0)
+        ? BIO_DATA.posts
+        : [];
+
+      if (posts.length === 0) {
+        container.innerHTML = '<div class="dim" style="padding: 10px 0;">заметок пока нет.</div>';
+      } else {
+        container.innerHTML = posts.map(p => `
+          <div class="blog-post-card">
+            <div class="blog-post-meta">
+              <span class="blog-post-title">${p.title}</span>
+              <span>${p.date}</span>
+            </div>
+            <div class="blog-post-text">${p.text}</div>
+          </div>
+        `).join('');
+      }
+    }
+
+    // Рендер fastfetch
+    function renderFetch() {
+      const container = document.getElementById('fetch-info-block');
+      container.innerHTML = `
+        <div class="fetch-title">${BIO_DATA.user}@shell</div>
+        <div class="fetch-sep">-----------------------------</div>
+        <div class="fetch-row"><span class="f-key">name</span><span class="f-val">${BIO_DATA.name}</span></div>
+        <div class="fetch-row"><span class="f-key">years</span><span class="f-val">${BIO_DATA.years}</span></div>
+        <div class="fetch-row"><span class="f-key">location</span><span class="f-val">${BIO_DATA.location}</span></div>
+        <div class="fetch-row"><span class="f-key">theme</span><span class="f-val">sand paper (sleeping cat)</span></div>
+        <div class="fetch-row"><span class="f-key">type</span><span class="f-val">infp</span></div>
+        <div class="fetch-row"><span class="f-key">avail</span><span class="f-val">${BIO_DATA.availability}</span></div>
+        <div class="fetch-row" style="margin-top: 4px;"><span class="f-key">status</span><span class="f-val">${BIO_DATA.status}</span></div>
+      `;
+    }
+
+    // Копирование ников
+    function copyText(val, el) {
+      navigator.clipboard.writeText(val);
+      const hint = el.querySelector('.copy-hint');
+      if (hint) {
+        const oldText = hint.innerText;
+        hint.innerText = '[скопировано!]';
+        hint.classList.add('copied-toast');
+        setTimeout(() => {
+          hint.innerText = oldText;
+          hint.classList.remove('copied-toast');
+        }, 1800);
+      }
+    }
+
+    // HTML секций
+    function getSectionHtml(cmd) {
+      switch(cmd) {
+        case 'about':
+          return `
+            <div class="prompt-row">
+              <span class="prompt"><span class="p-user">qualbyy</span><span class="p-sym">:</span><span class="p-path">~</span><span class="p-sym">$</span></span>
+              <span class="command">cat about.txt</span>
+            </div>
+            <div class="output">${BIO_DATA.about}</div>
+          `;
+        case 'stack':
+          return `
+            <div class="prompt-row">
+              <span class="prompt"><span class="p-user">qualbyy</span><span class="p-sym">:</span><span class="p-path">~</span><span class="p-sym">$</span></span>
+              <span class="command">cat ./tech_stack.md</span>
+            </div>
+            <div class="output table-view">
+              ${BIO_DATA.stack.map(s => `
+                <div class="table-row">
+                  <span class="table-key">${s.cat}</span>
+                  <span class="table-val">
+                    ${s.url ? `<a class="term-link" href="${s.url}" target="_blank">${s.list}</a>` : s.list}
+                  </span>
+                </div>
+              `).join('')}
+            </div>
+          `;
+        case 'telegram':
+          return `
+            <div class="prompt-row">
+              <span class="prompt"><span class="p-user">qualbyy</span><span class="p-sym">:</span><span class="p-path">~</span><span class="p-sym">$</span></span>
+              <span class="command">ls -la ./telegram/</span>
+            </div>
+            <div class="output table-view">
+              ${BIO_DATA.telegram.map(item => `
+                <div class="table-row">
+                  <span><a class="term-link" href="${item.url}" target="_blank">${item.tag}</a></span>
+                  <span class="dim">${item.desc}</span>
+                </div>
+              `).join('')}
+            </div>
+          `;
+        case 'accounts':
+          return `
+            <div class="prompt-row">
+              <span class="prompt"><span class="p-user">qualbyy</span><span class="p-sym">:</span><span class="p-path">~</span><span class="p-sym">$</span></span>
+              <span class="command">cat ./accounts.conf</span>
+              <span class="dim">(кликни на строку, чтобы скопировать)</span>
+            </div>
+            <div class="output table-view">
+              ${BIO_DATA.accounts.map(acc => `
+                <div class="table-row copyable" onclick="copyText('${acc.value}', this)">
+                  <span class="table-key">${acc.platform}</span>
+                  <span class="table-val">
+                    ${acc.url ? `<a class="term-link" href="${acc.url}" target="_blank" onclick="event.stopPropagation()">${acc.value}</a>` : acc.value}
+                    <span class="copy-hint">[копировать]</span>
+                  </span>
+                </div>
+              `).join('')}
+            </div>
+          `;
+        case 'setup':
+          return `
+            <div class="prompt-row">
+              <span class="prompt"><span class="p-user">qualbyy</span><span class="p-sym">:</span><span class="p-path">~</span><span class="p-sym">$</span></span>
+              <span class="command">inxi --hardware</span>
+            </div>
+            <div class="output table-view">
+              ${BIO_DATA.setup.map(s => `
+                <div class="table-row">
+                  <span class="table-key">${s.key}</span>
+                  <span class="table-val">${s.val}</span>
+                </div>
+              `).join('')}
+            </div>
+          `;
+        case 'games':
+          return `
+            <div class="prompt-row">
+              <span class="prompt"><span class="p-user">qualbyy</span><span class="p-sym">:</span><span class="p-path">~</span><span class="p-sym">$</span></span>
+              <span class="command">cat ./games.list</span>
+              <span class="dim">(нажми на игру со стрелкой &nearr; чтобы открыть информацию)</span>
+            </div>
+            <div class="output tag-grid">
+              ${BIO_DATA.games.map(g => {
+                if (typeof g === 'object' && g.key) {
+                  return `<span class="term-tag interactive-tag" onclick="openGameModal('${g.key}')">${g.title} &nearr;</span>`;
+                }
+                const title = typeof g === 'object' ? g.title : g;
+                return `<span class="term-tag">${title}</span>`;
+              }).join('')}
+            </div>
+          `;
+        case 'traits':
+          return `
+            <div class="prompt-row">
+              <span class="prompt"><span class="p-user">qualbyy</span><span class="p-sym">:</span><span class="p-path">~</span><span class="p-sym">$</span></span>
+              <span class="command">cat ./traits.txt</span>
+            </div>
+            <div class="output tag-grid">
+              ${BIO_DATA.traits.map(t => `<span class="term-tag">${t}</span>`).join('')}
+            </div>
+          `;
+        case 'dni':
+          return `
+            <div class="prompt-row">
+              <span class="prompt"><span class="p-user">qualbyy</span><span class="p-sym">:</span><span class="p-path">~</span><span class="p-sym">$</span></span>
+              <span class="command">iptables -L drop</span>
+            </div>
+            <div class="output tag-grid">
+              ${BIO_DATA.dni.map(d => `<span class="term-tag dni-tag">${d}</span>`).join('')}
+            </div>
+          `;
+        default:
+          return null;
+      }
+    }
+
+    function runCmd(cmd) {
+      const clean = cmd.trim().toLowerCase();
+      if (!clean) return;
+
+      const out = document.getElementById('dynamic-output');
+
+      if (clean === 'clear') {
+        out.innerHTML = '';
+        return;
+      }
+
+      if (clean === 'blog') {
+        toggleWindow('blog', true);
+        return;
+      }
+
+      if (clean === 'all') {
+        ['about', 'stack', 'telegram', 'accounts', 'setup', 'games', 'traits', 'dni'].forEach(c => {
+          const div = document.createElement('div');
+          div.className = 'line';
+          div.innerHTML = getSectionHtml(c);
+          out.appendChild(div);
+        });
+        const foot = document.createElement('div');
+        foot.className = 'line';
+        foot.innerHTML = `
+          <div class="prompt-row">
+            <span class="prompt"><span class="p-user">qualbyy</span><span class="p-sym">:</span><span class="p-path">~</span><span class="p-sym">$</span></span>
+            <span class="dim">echo "${BIO_DATA.footer}"</span>
+            <span class="cursor"></span>
+          </div>
+        `;
+        out.appendChild(foot);
+        foot.scrollIntoView({ behavior: 'smooth' });
+        return;
+      }
+
+      if (clean === 'help') {
+        appendOutput('help', `доступные команды:
+  - all         : раскрыть всё био целиком
+  - about       : обо мне
+  - stack       : стек и кодинг
+  - telegram    : каналы и проекты
+  - accounts    : соцсети и контакты
+  - setup       : девайсы и сетап
+  - games       : любимые игры
+  - traits      : черты и характер
+  - dni         : ограничения
+  - clear       : очистить экран`);
+        return;
+      }
+
+      // Секретные пасхалки
+      if (clean === 'coffee') {
+        appendOutput('coffee', `
+      (  )   (   )  )
+       ) (   )  (  (
+       ( )  (    ) )
+       _____________
+      <_____________> ===[ песочный латте готов ]===
+       |           |/
+       |   cafe    |
+       |___________|
+        `);
+        return;
+      }
+
+      if (clean === 'cat') {
+        appendOutput('cat', `
+   /\\_/\\  
+  ( o.o )  мяу. продолжай вайбкодить.
+   > ^ <
+        `);
+        return;
+      }
+
+      if (clean === 'matrix') {
+        appendOutput('matrix', 'wake up, sasha... follow the white rabbit.');
+        return;
+      }
+
+      if (clean === 'sudo') {
+        appendOutput('sudo', 'permission denied: вы не в файле sudoers. этот инцидент будет передан Санте.');
+        return;
+      }
+
+      const secHtml = getSectionHtml(clean);
+      if (secHtml) {
+        const div = document.createElement('div');
+        div.className = 'line';
+        div.innerHTML = secHtml;
+        out.appendChild(div);
+        div.scrollIntoView({ behavior: 'smooth' });
+        return;
+      }
+
+      appendOutput(clean, `shell: команда не найдена: ${clean}. введи "help" для списка.`);
+    }
+
+    function appendOutput(cmd, text) {
+      const out = document.getElementById('dynamic-output');
+      const div = document.createElement('div');
+      div.className = 'line';
+      div.innerHTML = `
+        <div class="prompt-row">
+          <span class="prompt"><span class="p-user">qualbyy</span><span class="p-sym">:</span><span class="p-path">~</span><span class="p-sym">$</span></span>
+          <span class="command">${cmd}</span>
+        </div>
+        <div class="output" style="white-space: pre-wrap;">${text}</div>
+      `;
+      out.appendChild(div);
+      div.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    document.getElementById('cli').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        runCmd(e.target.value);
+        e.target.value = '';
+      }
+    });
+
+    // Инициализация
+    window.addEventListener('DOMContentLoaded', () => {
+      renderFetch();
+      appendOutput('system', 'введи "all" или кликай по кнопкам выше, чтобы открыть разделы. введи "help" для списка.');
+      
+      // Вычисляем точный геометрический центр экрана после отрисовки DOM
+      requestAnimationFrame(() => {
+        centerWindow('term');
+        centerWindow('blog');
+        const blogEl = document.getElementById('win-blog');
+        blogEl.style.left = (parseInt(blogEl.style.left || 0) + 30) + 'px';
+        blogEl.style.top = (parseInt(blogEl.style.top || 0) + 30) + 'px';
+      });
+    });
+  </script>
+</body>
+</html>
