@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>qualbyy@shell: ~</title>
   <link rel="icon" type="image/svg+xml" href="logo.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg: #f5f2eb;
@@ -21,7 +24,7 @@
       --prompt-user: #8c6838;
       --prompt-path: #6b6357;
       
-      --font-mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+      --font-mono: "Golos Text", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
 
     * {
@@ -152,19 +155,14 @@
       margin-left: 2px;
     }
 
-    /* Увеличенный хитбокс вокруг каждой кнопки с компактным расстоянием */
+    /* Декоративные кнопки заголовка окна */
     .btn-hitbox {
       width: 19px;
       height: 24px;
       display: flex;
       align-items: center;
       justify-content: center;
-      cursor: pointer;
-    }
-
-    .btn-hitbox:hover .btn {
-      transform: scale(1.15);
-      filter: brightness(0.95);
+      cursor: default;
     }
 
     .btn {
@@ -686,15 +684,9 @@
   <div class="window window-main active-focus" id="win-term" onmousedown="bringToFront('term')">
     <div class="window-header" onmousedown="startDrag(event, 'win-term')">
       <div class="header-buttons">
-        <div class="btn-hitbox" onclick="event.stopPropagation(); closeWindowWithTvEffect('term')" title="закрыть (тв эффект)">
-          <span class="btn btn-close"></span>
-        </div>
-        <div class="btn-hitbox" onclick="event.stopPropagation(); toggleWindow('term')" title="свернуть (genie)">
-          <span class="btn btn-min"></span>
-        </div>
-        <div class="btn-hitbox" onclick="event.stopPropagation(); centerWindow('term')" title="центрировать">
-          <span class="btn btn-max"></span>
-        </div>
+        <div class="btn-hitbox"><span class="btn btn-close"></span></div>
+        <div class="btn-hitbox"><span class="btn btn-min"></span></div>
+        <div class="btn-hitbox"><span class="btn btn-max"></span></div>
       </div>
       <div class="header-title">qualbyy@shell: ~/bio</div>
       <div style="width: 58px;"></div>
@@ -761,15 +753,9 @@
   <div class="window window-blog minimized" id="win-blog" onmousedown="bringToFront('blog')">
     <div class="window-header" onmousedown="startDrag(event, 'win-blog')">
       <div class="header-buttons">
-        <div class="btn-hitbox" onclick="event.stopPropagation(); closeWindowWithTvEffect('blog')" title="закрыть (тв эффект)">
-          <span class="btn btn-close"></span>
-        </div>
-        <div class="btn-hitbox" onclick="event.stopPropagation(); toggleWindow('blog')" title="свернуть (genie)">
-          <span class="btn btn-min"></span>
-        </div>
-        <div class="btn-hitbox" onclick="event.stopPropagation(); centerWindow('blog')" title="центрировать">
-          <span class="btn btn-max"></span>
-        </div>
+        <div class="btn-hitbox"><span class="btn btn-close"></span></div>
+        <div class="btn-hitbox"><span class="btn btn-min"></span></div>
+        <div class="btn-hitbox"><span class="btn btn-max"></span></div>
       </div>
       <div class="header-title"><span class="full-title">qualbyy@shell: ~/blog/posts.log</span></div>
       <div style="width: 58px;"></div>
@@ -792,15 +778,9 @@
     <div class="window window-modal minimized" id="win-game-modal" onmousedown="bringToFront('game-modal')">
       <div class="window-header" onmousedown="startDrag(event, 'win-game-modal')">
         <div class="header-buttons">
-          <div class="btn-hitbox" onclick="event.stopPropagation(); closeWindowWithTvEffect('game-modal')" title="закрыть (тв эффект)">
-            <span class="btn btn-close"></span>
-          </div>
-          <div class="btn-hitbox" onclick="event.stopPropagation(); toggleWindow('game-modal')" title="свернуть">
-            <span class="btn btn-min"></span>
-          </div>
-          <div class="btn-hitbox" onclick="event.stopPropagation(); centerWindow('game-modal')" title="центрировать">
-            <span class="btn btn-max"></span>
-          </div>
+          <div class="btn-hitbox"><span class="btn btn-close"></span></div>
+          <div class="btn-hitbox"><span class="btn btn-min"></span></div>
+          <div class="btn-hitbox"><span class="btn btn-max"></span></div>
         </div>
         <div class="header-title" id="game-modal-title">gaming.stats</div>
         <div style="width: 58px;"></div>
@@ -851,8 +831,9 @@
             `).join('')}
           </div>
         </div>
-        <div class="dim" style="font-size: 11px; margin-top: 4px; border-top: 1px dashed var(--border); padding-top: 8px;">
-          status: sync completed &bull; verified profile
+        <div class="dim" style="font-size: 11px; margin-top: 4px; border-top: 1px dashed var(--border); padding-top: 8px; display: flex; justify-content: space-between; align-items: center;">
+          <span>status: sync completed &bull; verified profile</span>
+          <span style="cursor: pointer; color: var(--sand-dark);" onclick="closeWindowWithTvEffect('game-modal')">[закрыть]</span>
         </div>
       `;
 
@@ -905,43 +886,11 @@
       return window.innerWidth <= 768;
     }
 
-    function toggleWindow(winId, forceState) {
-      if (typeof forceState === 'boolean') {
-        windowState[winId] = forceState;
-      } else {
-        windowState[winId] = !windowState[winId];
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && windowState['game-modal']) {
+        closeWindowWithTvEffect('game-modal');
       }
-
-      // Взаимоисключение на мобилке для term и blog (окна игр не затрагиваются)
-      if (isMobile() && windowState[winId]) {
-        if (winId === 'term' && windowState.blog) {
-          toggleWindow('blog', false);
-        } else if (winId === 'blog' && windowState.term) {
-          toggleWindow('term', false);
-        }
-      }
-
-      const winEl = document.getElementById('win-' + winId);
-      const dockEl = document.getElementById('dock-' + winId);
-
-      if (windowState[winId]) {
-        winEl.classList.remove('tv-closing');
-        winEl.classList.remove('minimized');
-        if (dockEl) dockEl.classList.add('open');
-        bringToFront(winId);
-
-        // Если не мобилка и позиция еще не выставлена, центрируем
-        if (!isMobile() && !winEl.style.left) {
-          centerWindow(winId);
-        }
-
-        if (winId === 'blog') renderBlogPosts();
-        if (winId === 'term' && !isMobile()) document.getElementById('cli').focus();
-      } else {
-        winEl.classList.add('minimized');
-        if (dockEl) dockEl.classList.remove('open');
-      }
-    }
+    });
 
     // ЛОГИКА DRAGGABLE ПЕРЕТАСКИВАНИЯ ОКОН
     let activeDragWin = null;
