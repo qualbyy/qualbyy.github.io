@@ -524,24 +524,7 @@
       line-height: 1.5;
     }
 
-    /* БОКОВОЙ ДОК СПРАВА (Desktop) */
-    .side-dock {
-      position: fixed;
-      right: 12px;
-      top: 50%;
-      transform: translateY(-50%);
-      background: rgba(236, 230, 218, 0.88);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      border: 1px solid var(--border-dark);
-      border-radius: 18px;
-      padding: 10px 6px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      box-shadow: 0 8px 24px rgba(130, 94, 46, 0.12);
-      z-index: 999;
-    }
+
 
     /* МОБИЛЬНАЯ АДАПТАЦИЯ (под точный масштаб экрана мобильных) */
     @media (max-width: 768px) {
@@ -564,9 +547,9 @@
         max-width: calc(100vw - 16px) !important;
         left: 8px !important;
         top: 8px !important;
-        height: calc(100dvh - 78px) !important;
-        height: calc(100vh - 78px) !important;
-        max-height: calc(100dvh - 78px) !important;
+        height: calc(100dvh - 16px) !important;
+        height: calc(100vh - 16px) !important;
+        max-height: calc(100dvh - 16px) !important;
         transform-origin: 50% 100%;
         margin: 0 !important;
         transition: transform 0.35s cubic-bezier(0.2, 0.9, 0.3, 1), opacity 0.28s ease !important;
@@ -615,36 +598,6 @@
         filter: blur(4px);
         pointer-events: none;
         display: none !important; /* На мобилке скрываем полностью чтобы не мешало */
-      }
-
-      .side-dock {
-        position: fixed !important;
-        left: 50% !important;
-        right: auto !important;
-        top: auto !important;
-        bottom: 10px !important;
-        transform: translateX(-50%) !important;
-        flex-direction: row;
-        padding: 4px 14px;
-        border-radius: 18px;
-        gap: 14px;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.16);
-        z-index: 9999;
-      }
-
-      .dock-app {
-        width: 42px;
-        height: 42px;
-      }
-
-      .dock-app:hover, .dock-app:active {
-        transform: none !important;
-        box-shadow: none !important;
-        background: var(--term-bg) !important;
-      }
-
-      .dock-tooltip {
-        display: none;
       }
 
       /* Центрирование и укорачивание заголовка окна блога на мобилке */
@@ -702,70 +655,7 @@
       }
     }
 
-    .dock-app {
-      width: 44px;
-      height: 44px;
-      border-radius: 12px;
-      background: var(--term-bg);
-      border: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      position: relative;
-      transition: all 0.2s cubic-bezier(0.2, 0.9, 0.3, 1.2);
-      user-select: none;
-    }
 
-    .dock-app:hover {
-      transform: scale(1.15) translateX(-4px);
-      background: #fff;
-      box-shadow: 0 4px 12px rgba(130, 94, 46, 0.18);
-    }
-
-    .dock-app-icon {
-      font-size: 14px;
-      font-weight: 700;
-      color: var(--sand-dark);
-      font-family: var(--font-mono);
-    }
-
-    .dock-app-dot {
-      width: 4px;
-      height: 4px;
-      border-radius: 50%;
-      background: var(--sand-accent);
-      position: absolute;
-      bottom: 4px;
-      opacity: 0;
-      transition: opacity 0.2s;
-    }
-
-    .dock-app.open .dock-app-dot {
-      opacity: 1;
-    }
-
-    .dock-tooltip {
-      position: absolute;
-      right: 56px;
-      background: var(--sand-dark);
-      color: #fff;
-      font-size: 11px;
-      padding: 4px 8px;
-      border-radius: 4px;
-      white-space: nowrap;
-      pointer-events: none;
-      opacity: 0;
-      transform: translateX(6px);
-      transition: all 0.15s ease;
-      font-family: var(--font-mono);
-    }
-
-    .dock-app:hover .dock-tooltip {
-      opacity: 1;
-      transform: translateX(0);
-    }
   </style>
 </head>
 <body>
@@ -812,11 +702,10 @@
       <div class="line">
         <div class="dim">быстрые команды:</div>
         <div class="quick-nav">
-          <button class="nav-btn" onclick="runCmd('all')">all</button>
           <button class="nav-btn nav-btn-highlight" onclick="runCmd('mskmeetsgmd')">mskmeetsgmd</button>
           <button class="nav-btn nav-btn-purple" onclick="runCmd('qplate')">qplate</button>
           <button class="nav-btn nav-btn-sky" onclick="runCmd('qsak')">qsak</button>
-          <button class="nav-btn" onclick="toggleWindow('blog', true)">blog app &rarr;</button>
+          <button class="nav-btn" onclick="runCmd('blog')">blog</button>
           <button class="nav-btn" onclick="runCmd('about')">about</button>
           <button class="nav-btn" onclick="runCmd('stack')">stack</button>
           <button class="nav-btn" onclick="runCmd('telegram')">telegram</button>
@@ -827,6 +716,7 @@
           <button class="nav-btn" onclick="runCmd('dni')">dni</button>
           <button class="nav-btn" onclick="runCmd('help')">help</button>
           <button class="nav-btn" onclick="runCmd('clear')">clear</button>
+          <button class="nav-btn" onclick="runCmd('all')">all</button>
         </div>
       </div>
 
@@ -892,21 +782,6 @@
       
       <div class="modal-game-content" id="game-modal-body"></div>
     </div>
-
-  <!-- БОКОВОЙ ДОК СПРАВА -->
-  <div class="side-dock">
-    <div class="dock-app open" id="dock-term" onclick="toggleWindow('term')">
-      <span class="dock-app-icon">bio</span>
-      <span class="dock-app-dot"></span>
-      <span class="dock-tooltip">terminal bio</span>
-    </div>
-    
-    <div class="dock-app" id="dock-blog" onclick="toggleWindow('blog')">
-      <span class="dock-app-icon">log</span>
-      <span class="dock-app-dot"></span>
-      <span class="dock-tooltip">microblog</span>
-    </div>
-  </div>
 
   <script src="data.js"></script>
 
@@ -992,7 +867,7 @@
       winEl.classList.remove('minimized');
       winEl.classList.add('tv-closing');
       windowState[winId] = false;
-      dockEl.classList.remove('open');
+      if (dockEl) dockEl.classList.remove('open');
 
       setTimeout(() => {
         winEl.classList.remove('tv-closing');
@@ -1026,7 +901,7 @@
       if (windowState[winId]) {
         winEl.classList.remove('tv-closing');
         winEl.classList.remove('minimized');
-        dockEl.classList.add('open');
+        if (dockEl) dockEl.classList.add('open');
         bringToFront(winId);
 
         // Если не мобилка и позиция еще не выставлена, центрируем
@@ -1038,7 +913,7 @@
         if (winId === 'term' && !isMobile()) document.getElementById('cli').focus();
       } else {
         winEl.classList.add('minimized');
-        dockEl.classList.remove('open');
+        if (dockEl) dockEl.classList.remove('open');
       }
     }
 
@@ -1175,6 +1050,17 @@
               <div><a class="term-link" href="https://qualby.github.io/qsak" target="_blank">qualby.github.io/qsak &nearr;</a></div>
             </div>
           `;
+        case 'blog':
+          return `
+            <div class="prompt-row">
+              <span class="prompt"><span class="p-user">qualbyy</span><span class="p-sym">:</span><span class="p-path">~</span><span class="p-sym">$</span></span>
+              <span class="command">cat ./blog.txt</span>
+            </div>
+            <div class="output">
+              <div style="margin-bottom: 6px;">мой личный блог в телеграме</div>
+              <div><a class="term-link" href="https://t.me/qualbyy" target="_blank">t.me/qualbyy &nearr;</a></div>
+            </div>
+          `;
         case 'about':
           return `
             <div class="prompt-row">
@@ -1302,11 +1188,6 @@
         return;
       }
 
-      if (clean === 'blog') {
-        toggleWindow('blog', true);
-        return;
-      }
-
       if (clean === 'all') {
         ['about', 'stack', 'telegram', 'accounts', 'setup', 'games', 'traits', 'dni'].forEach(c => {
           const div = document.createElement('div');
@@ -1330,10 +1211,10 @@
 
       if (clean === 'help') {
         appendOutput('help', `доступные команды:
-  - all         : раскрыть всё био целиком
   - project     : подпроект mskmeetsgmd
   - qplate      : конструктор сайтов
   - qsak        : швейцарский нож для всех форматов
+  - blog        : личный блог
   - about       : обо мне
   - stack       : стек и кодинг
   - telegram    : каналы и проекты
@@ -1342,7 +1223,8 @@
   - games       : любимые игры
   - traits      : черты и характер
   - dni         : ограничения
-  - clear       : очистить экран`);
+  - clear       : очистить экран
+  - all         : раскрыть всё био целиком`);
         return;
       }
 
