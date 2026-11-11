@@ -343,6 +343,18 @@
       color: #632a76;
     }
 
+    .nav-btn.nav-btn-sky {
+      background: #e6f4fa;
+      border-color: #bde0f0;
+      color: #1e6d92;
+    }
+
+    .nav-btn.nav-btn-sky:hover {
+      background: #d4ecf7;
+      border-color: #9eccdf;
+      color: #134e6b;
+    }
+
     /* Таблицы */
     .table-view {
       display: flex;
@@ -803,6 +815,7 @@
           <button class="nav-btn" onclick="runCmd('all')">all</button>
           <button class="nav-btn nav-btn-highlight" onclick="runCmd('mskmeetsgmd')">mskmeetsgmd</button>
           <button class="nav-btn nav-btn-purple" onclick="runCmd('qplate')">qplate</button>
+          <button class="nav-btn nav-btn-sky" onclick="runCmd('qsak')">qsak</button>
           <button class="nav-btn" onclick="toggleWindow('blog', true)">blog app &rarr;</button>
           <button class="nav-btn" onclick="runCmd('about')">about</button>
           <button class="nav-btn" onclick="runCmd('stack')">stack</button>
@@ -1137,7 +1150,7 @@
             </div>
             <div class="output">
               <div style="margin-bottom: 6px;">мой сайт для удобного просмотра информации по сходкам ГДшеров из Москвы</div>
-              <div><a class="term-link" href="https://qualbyy.github.io/mskmeetsgmd/" target="_blank">https://qualbyy.github.io/mskmeetsgmd/ &nearr;</a></div>
+              <div><a class="term-link" href="https://qualbyy.github.io/mskmeetsgmd/" target="_blank">qualbyy.github.io/mskmeetsgmd/ &nearr;</a></div>
             </div>
           `;
         case 'qplate':
@@ -1149,6 +1162,17 @@
             <div class="output">
               <div style="margin-bottom: 6px;">мой конструктор сайтов, похожий на этот</div>
               <div><a class="term-link" href="https://qualbyy.github.io/qplate" target="_blank">qualbyy.github.io/qplate &nearr;</a></div>
+            </div>
+          `;
+        case 'qsak':
+          return `
+            <div class="prompt-row">
+              <span class="prompt"><span class="p-user">qualbyy</span><span class="p-sym">:</span><span class="p-path">~</span><span class="p-sym">$</span></span>
+              <span class="command">cat ./qsak.txt</span>
+            </div>
+            <div class="output">
+              <div style="margin-bottom: 6px;">швейцарский нож для всех форматов</div>
+              <div><a class="term-link" href="https://qualby.github.io/qsak" target="_blank">qualby.github.io/qsak &nearr;</a></div>
             </div>
           `;
         case 'about':
@@ -1309,6 +1333,7 @@
   - all         : раскрыть всё био целиком
   - project     : подпроект mskmeetsgmd
   - qplate      : конструктор сайтов
+  - qsak        : швейцарский нож для всех форматов
   - about       : обо мне
   - stack       : стек и кодинг
   - telegram    : каналы и проекты
