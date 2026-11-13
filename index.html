@@ -1051,14 +1051,18 @@
               <span class="command">cat ./tech_stack.md</span>
             </div>
             <div class="output table-view">
-              ${BIO_DATA.stack.map(s => `
+              ${BIO_DATA.stack.map(s => {
+                let val = s.url ? `<a class="term-link" href="${s.url}" target="_blank">${s.list}</a>` : s.list;
+                (s.links || []).forEach(l => {
+                  val = val.replace(l.text, `<a class="term-link" href="${l.url}" target="_blank">${l.text}</a>`);
+                });
+                return `
                 <div class="table-row">
                   <span class="table-key">${s.cat}</span>
-                  <span class="table-val">
-                    ${s.url ? `<a class="term-link" href="${s.url}" target="_blank">${s.list}</a>` : s.list}
-                  </span>
+                  <span class="table-val">${val}</span>
                 </div>
-              `).join('')}
+              `;
+              }).join('')}
             </div>
           `;
         case 'telegram':

@@ -11,7 +11,7 @@ const BIO_DATA = {
     { cat: "окружение", list: "endeavouros (arch linux), терминальные утилиты, ии-агенты / харнесы" },
     { cat: "стэк", list: "python, rust, html5, css3, javascript (vanilla), git" },
     { cat: "интересы", list: "вайбкодинг, cli утилиты, боты, минималистичный веб" },
-    { cat: "недавнее", list: "телеграм боты, свой браузер, сайт-конструктор и сайт для сходок москвы" },
+    { cat: "недавнее", list: "телеграм боты, сайт-конструктор, конвертер файлов (qsak) и бот для demonlist.org (@gdlcheckbot)", links: [{ text: "qsak", url: "https://qualbyy.github.io/qsak" }, { text: "@gdlcheckbot", url: "https://t.me/gdlcheckbot" }] },
     { cat: "гитхаб", list: "github.com/qualbyy", url: "https://github.com/qualbyy" }
   ],
 
